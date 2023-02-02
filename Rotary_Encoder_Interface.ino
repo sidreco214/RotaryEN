@@ -5,12 +5,50 @@ begin 2023-02-01
 가장 첫 열은 커서
 
 한 메뉴 안에서
-커서는 stepCount%LCD_ROW
+
 step 카운트번째 메뉴부터 LCD_LOW만큼 반복해서 화면 표시 하면 됨
 그럼 스크롤링 됨
 step 카운트 사용 후 초기화
 
 switch와 노드에 커맨드 넘버 저장해서 기능 구현
+
+cursor = 0
+>A 0123          0123 
+ B
+ C
+ D
+
+cursor =1
+ A                0123
+>B 1230
+ C
+ D
+
+cursor =2
+ A                0123
+ B
+>C 2301
+ D
+
+cursor =3
+ A                0123
+ B
+ C
+>D 3012
+
+cursor =4
+ B                1234
+ C
+ D
+>E 4123
+
+cursor =5 나머지 연산 %len
+
+>A 0123
+ B
+ C
+ D
+
 */
 
 #include "src/RotaryEN.h"
@@ -24,6 +62,7 @@ LiquidCrystal_I2C lcd(0x27,20,LCD_ROW);
 class Node {
     public:
     String name;
+    Node* pri; //이전 노드
     Node** child; //하위 자식노드 배열 저장
     uint8_t length; //하위 자식노드 갯수
     uint8_t command;
@@ -108,31 +147,38 @@ void setup() {
 }
 
 void loop() {
-    static uint16_t stepCount = 0;
-    stepCount += rotary.step();
-
-    //커서 표시
-    lcd.setCursor(0,stepCount%LCD_ROW);
-    lcd.print(">");
+    static uint16_t cursor = 0;
+    cursor += rotary.step();
 
     static Node* node = root;
     uint8_t len = node->length;
+    cursor %= len;
+
+    //커서 표시
+    lcd.clear();
+    if(cursor >= LCD_ROW) lcd.setCursor(0,LCD_ROW);
+    else                 lcd.setCursor(0,cursor);
+    lcd.print(">");
 
     //메뉴 lcd표시
-    lcd.clear();
-    for(int i=0; i<LCD_ROW; i++) {
-        lcd.setCursor(1,(stepCount+i)%LCD_ROW);
-        lcd.print(node->child[(stepCount+i)%len]->name);
+    uint8_t num = min(LCD_ROW,len);
+    uint8_t n;
+    if(cursor >= num) n = cursor-num+1;
+    else              n = 0;
+
+    for(int i=0; i<num; i++) {
+        lcd.setCursor(1,i);
+        lcd.print(node->child[i+n]->name);
     }
 
     if(rotary.pressed()) {
-        if(node->child[stepCount%len]->command) { //i=0일때가 커서 있는 지점
-            order = node->child[stepCount%len]->command;
-            stepCount = 0;
+        if(node->child[cursor]->command) {
+            order = node->child[cursor]->command;
+            cursor = 0;
         }
         else {
-            node = node->child[stepCount%len];
-            stepCount = 0;
+            node = node->child[cursor];
+            cursor = 0;
         }
     }
     
@@ -149,7 +195,9 @@ void loop() {
         lcd.setCursor(0,0);
         lcd.print("func");
         lcd.print(order);
+        order = 0;
         node = root;
+        delay(2000);
         break;
 
         case menu_A2:
@@ -160,7 +208,9 @@ void loop() {
         lcd.setCursor(0,0);
         lcd.print("func");
         lcd.print(order);
+        order = 0;
         node = root;
+        delay(2000);
         break;
 
         case menu_A3:
@@ -171,7 +221,9 @@ void loop() {
         lcd.setCursor(0,0);
         lcd.print("func");
         lcd.print(order);
+        order = 0;
         node = root;
+        delay(2000);
         break;
 
         case menu_B1:
@@ -182,7 +234,9 @@ void loop() {
         lcd.setCursor(0,0);
         lcd.print("func");
         lcd.print(order);
+        order = 0;
         node = root;
+        delay(2000);
         break;
 
         case menu_B2:
@@ -193,7 +247,9 @@ void loop() {
         lcd.setCursor(0,0);
         lcd.print("func");
         lcd.print(order);
+        order = 0;
         node = root;
+        delay(2000);
         break;
 
         case menu_C1:
@@ -204,7 +260,9 @@ void loop() {
         lcd.setCursor(0,0);
         lcd.print("func");
         lcd.print(order);
+        order = 0;
         node = root;
+        delay(2000);
         break;
 
         case menu_C2:
@@ -215,7 +273,9 @@ void loop() {
         lcd.setCursor(0,0);
         lcd.print("func");
         lcd.print(order);
+        order = 0;
         node = root;
+        delay(2000);
         break;
 
         case menu_D1:
@@ -226,7 +286,9 @@ void loop() {
         lcd.setCursor(0,0);
         lcd.print("func");
         lcd.print(order);
+        order = 0;
         node = root;
+        delay(2000);
         break;
 
         case menu_D2:
@@ -237,7 +299,9 @@ void loop() {
         lcd.setCursor(0,0);
         lcd.print("func");
         lcd.print(order);
+        order = 0;
         node = root;
+        delay(2000);
         break;
 
         case menu_E1:
@@ -248,7 +312,9 @@ void loop() {
         lcd.setCursor(0,0);
         lcd.print("func");
         lcd.print(order);
+        order = 0;
         node = root;
+        delay(2000);
         break;
 
         case menu_E2:
@@ -259,8 +325,10 @@ void loop() {
         lcd.setCursor(0,0);
         lcd.print("func");
         lcd.print(order);
+        order = 0;
         node = root;
+        delay(2000);
         break;
     }
-    
+    delay(700);
 }

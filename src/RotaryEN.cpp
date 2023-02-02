@@ -38,32 +38,36 @@ ISR(INT1_vect) {
 };
 
 volatile uint8_t buttonLV = 0;
+volatile unsigned long t = 0;
+uint8_t pin;
 
-void INIT_PCINT(uint8_t pin) {
+void INIT_PCINT() {
     if(pin < 8) {
         //D포트(0~7) PCINT16~23
         cbi(DDRD,pin);
         sbi(PCICR,PCIE2); //PCINT2 인터럽트 활성화
-        sbi(PCMSK2,(pin+16)); //해당 핀의 PCINT2 인터럽트 활성화
+        sbi(PCMSK2,pin); //해당 핀의 PCINT2 인터럽트 활성화
     }
     else if(pin < 14) {
         //B포트(8~13) PCINT0~7
         cbi(DDRB,(pin-8));
-        sbi(PCMSK0,PCIE0); //PCINT0 인터럽트 활성화
+        sbi(PCICR,PCIE0); //PCINT0 인터럽트 활성화
         sbi(PCMSK0,(pin-8)); //해당 핀의 PCINT0 인터럽트 활성화
     }
     else if(pin < 20) {
         //C포트(14~19) PCINT14~19
         cbi(DDRC,(pin-14));
-        sbi(PCMSK1,PCIE1); //PCINT1 인터럽트 활성화
-        sbi(PCMSK1,(pin-6)); //해당 핀의 PCINT1 인터럽트 활성화
+        sbi(PCICR,PCIE1); //PCINT1 인터럽트 활성화
+        sbi(PCMSK1,(pin-14)); //해당 핀의 PCINT1 인터럽트 활성화
     }
     else return;
     sei();
 };
 
 inline void button() {
-    buttonLV = 1;
+    if(millis()-t > 500 && digitalRead(pin)) {
+        buttonLV = 1;
+    }
 };
 
 ISR(PCINT0_vect) {
@@ -86,18 +90,19 @@ RotaryEN::RotaryEN() {
 
 RotaryEN::RotaryEN(uint8_t button) {
     pri = millis();
+    pin = button;
     INIT_INT0();
     INIT_INT1();
-    INIT_PCINT(button);
-    buttonPin = button;
+    INIT_PCINT();
 }
 
 RotaryEN::RotaryEN(uint8_t button, uint8_t step) {
     pri = millis();
+    pin = button;
     INIT_INT0();
     INIT_INT1();
-    INIT_PCINT(button);
-    buttonPin = button;
+    INIT_PCINT();
+   
     _step = step;
 }
 
