@@ -4,16 +4,15 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:/Users/HJ/Documents/Arduino/libraries/**",
-                "D:/2.Program/arduino 1.8.15/**",
-                "D:/2.Program/arduino 1.8.15/hardware/arduino/avr/libraries",
-                "${workspaceFolder}/src"
+                "D:/1.Program/arduino 1.8.15/**"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
             "intelliSenseMode": "windows-msvc-x64"
         }
     ],
