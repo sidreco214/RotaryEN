@@ -22,13 +22,12 @@ void INIT_INT0();   //s1핀의 RISING
 void INIT_INT1();   //s2핀의 RISING
 
 //버튼 입력
-void INIT_PCINT(uint8_t pin); //D포트 0~7, B포트 8~13, C포트 14~19
+void INIT_PCINT(); //D포트 0~7, B포트 8~13, C포트 14~19
 inline void button(); //버튼 입력시 인터럽트 처리 함수
 
 class RotaryEN {
     protected:
     int8_t direction; //s1 쪽이면 + s2쪽이면 -
-    uint8_t buttonPin;//버튼 핀 번호
     uint8_t _step; //로터리 인코더 스탭
 
     public:
