@@ -4,7 +4,10 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "D:/1.Program/arduino 1.8.15/**"
+                "C:/Users/HJ/Documents/Arduino/libraries/**",
+                "D:/2.Program/arduino 1.8.15/**",
+                "D:/2.Program/arduino 1.8.15/hardware/arduino/avr/libraries",
+                "${workspaceFolder}/src"
             ],
             "defines": [
                 "_DEBUG",
