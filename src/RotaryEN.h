@@ -23,6 +23,7 @@ void INIT_INT1();   //s2핀의 RISING
 
 //버튼 입력
 void INIT_PCINT(); //D포트 0~7, B포트 8~13, C포트 14~19
+void END_PCINT();
 inline void button(); //버튼 입력시 인터럽트 처리 함수
 
 class RotaryEN {
@@ -34,6 +35,7 @@ class RotaryEN {
     RotaryEN(); //방향만 필요한 경우
     RotaryEN(uint8_t button); //방향+버튼 입력
     RotaryEN(uint8_t button, uint8_t step); //몇도 회전했는지 까지 필요한 경우
+    ~RotaryEN();
 
     uint8_t pressed(); //버튼이 눌러졌으면 1
     int8_t step(); //로터리 인코더 회전 스탭 반환

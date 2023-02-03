@@ -56,7 +56,6 @@ cursor =5 나머지 연산 %len
 #endif
 
 #include "src/RotaryEN.h"
-RotaryEN rotary(4,20);
 
 #include "src/LiquidCrystal_I2C.h"
 #define LCD_ROW 4
@@ -80,8 +79,6 @@ class Node {
     };
 
     ~Node() {
-      //전역으로 설정되었기에 호출될 일이 없지만 혹시 모르니
-      //노드별로 포인터가 남아 있으니, 노드 포인터를 모아둔 배열은 그냥 해제해도 상관없음
       if(child) {
         delete[] child;
         child = NULL;
@@ -103,99 +100,102 @@ enum Order {
     menu_E1,s
 } order;
 
-//UI 내용 할당
-Node* root =  new Node("",5);
-Node* menuA = new Node("A",3,root);
-Node* menuB = new Node("B",2,root);
-Node* menuC = new Node("C",2,root);
-Node* menuD = new Node("D",2,root);
-Node* menuE = new Node("E",2,root);
-
-Node* menuA1 = new Node("A1",0,menuA,menu_A1);
-Node* menuA2 = new Node("A2",0,menuA,menu_A2);
-Node* menuA3 = new Node("Back",0,menuA,back);
-
-Node* menuB1 = new Node("B1",0,menuB,menu_B1);
-Node* menuB2 = new Node("Back",0,menuB,back);
-
-Node* menuC1 = new Node("C1",0,menuC,menu_C1);
-Node* menuC2 = new Node("Back",0,menuC,back);
-
-Node* menuD1 = new Node("D1",0,menuD,menu_D1);
-Node* menuD2 = new Node("Back",0,menuD,back);
-
-Node* menuE1 = new Node("E1",0,menuD,menu_E1);
-Node* menuE2 = new Node("Back",0,menuD,back);
-
-
 void setup() {
-    root->child =  new Node*[5]{menuA, menuB, menuC, menuD, menuE};
-    menuA->child = new Node*[3]{menuA1, menuA2, menuA3};
-    menuB->child = new Node*[2]{menuB1, menuB2};
-    menuC->child = new Node*[2]{menuC1, menuC2};
-    menuD->child = new Node*[2]{menuD1, menuD2};
-    menuE->child = new Node*[2]{menuE1, menuE2};
-
     Serial.begin(9600);
     lcd.init();
     lcd.backlight();
 }
 
-void loop() {
-    static Node* node = root;
-    uint8_t len = node->length;
+void loop() { //main 안 while(1)
+    uint8_t menu = 1;
+    while(menu) {
+        RotaryEN rotary(4,20); //로터리 인코더가 메뉴 화면에서만 작동해야 함
 
-    static uint8_t cursor = 0; //자료 선택커서
-    static uint8_t LCDcursor = 0; //LCD 화면 커서
-    int8_t count = rotary.step();
-    cursor += count;
-    cursor %= len; 
-    LCDcursor += count;
-    LCDcursor = constrain(LCDcursor,0, min(LCD_ROW,len)-1);
-    if(!cursor) LCDcursor = 0; //자료 커서가 마지막 E에 있다가 다음으로 넘어가면 자료 커서는 0번을 가르키는데 LCD 커서는 여전히 3을 가르키니 초기화 필요
+        //UI 내용 할당
+        Node root("",5);
+        Node menuA("A",3,&root);
+        Node menuB("B",2,&root);
+        Node menuC("C",2,&root);
+        Node menuD("D",2,&root);
+        Node menuE("E",2,&root);
+        root->child =  new Node*[5]{&menuA, &menuB, &menuC, &menuD, &menuE};
 
-    lcd.clear();
-    //LCD 커서 표시
-    lcd.setCursor(0,LCDcursor);
-    lcd.print(">");
+        Node menuA1("A1",0,&menuA,menu_A1);
+        Node menuA2("A2",0,&menuA,menu_A2);
+        Node menuA3("Back",0,&menuA,back);
+        menuA->child = new Node*[3]{&menuA1, &menuA2, &menuA3};
+
+        Node menuB1("B1",0,&menuB,menu_B1);
+        Node menuB2("Back",0,&menuB,back);
+        menuB->child = new Node*[2]{&menuB1, &menuB2};
+
+        Node menuC1("C1",0,&menuC,menu_C1);
+        Node menuC2("Back",0,&menuC,back);
+        menuC->child = new Node*[2]{&menuC1, &menuC2}; //여기까지 수정, new를 걍 생성자로 바꾸기, 메모리 누수 방지
+
+        Node* menuD1 = new Node("D1",0,menuD,menu_D1);
+        Node* menuD2 = new Node("Back",0,menuD,back);
+        menuD->child = new Node*[2]{menuD1, menuD2};
+
+        Node* menuE1 = new Node("E1",0,menuD,menu_E1);
+        Node* menuE2 = new Node("Back",0,menuD,back);
+        menuE->child = new Node*[2]{menuE1, menuE2};
+
+        while(1) {
+            static Node* node = root;
+            uint8_t len = node->length;
+
+            static uint8_t cursor = 0; //자료 선택커서
+            static uint8_t LCDcursor = 0; //LCD 화면 커서
+            int8_t count = rotary.step();
+            cursor += count;
+            cursor %= len; 
+            LCDcursor += count;
+            LCDcursor = constrain(LCDcursor,0, min(LCD_ROW,len)-1);
+            if(!cursor) LCDcursor = 0; //자료 커서가 마지막 E에 있다가 다음으로 넘어가면 자료 커서는 0번을 가르키는데 LCD 커서는 여전히 3을 가르키니 초기화 필요
+
+            lcd.clear();
+            //LCD 커서 표시
+            lcd.setCursor(0,LCDcursor);
+            lcd.print(">");
     
-    //아래로 진행해서 화면 채우기
-    for(int i=0; i<LCD_ROW-LCDcursor; i++) {
-        if(LCDcursor+i < LCD_ROW && cursor+i < len) {
-            lcd.setCursor(1,LCDcursor+i);
-            lcd.print(node->child[cursor+i]->name);
-        }
-    }
+            //아래로 진행해서 화면 채우기
+            for(int i=0; i<LCD_ROW-LCDcursor; i++) {
+                if(LCDcursor+i < LCD_ROW && cursor+i < len) {
+                    lcd.setCursor(1,LCDcursor+i);
+                    lcd.print(node->child[cursor+i]->name);
+                }
+            }
 
-    //위로 진행해서 화면 채우기
-    for(int i=1; i<=LCDcursor; i++) {
-        if(0 <= LCDcursor-i && 0 <= cursor-i) {
-            lcd.setCursor(1,LCDcursor-i);
-            lcd.print(node->child[cursor-i]->name);
-        }
-    }
+            //위로 진행해서 화면 채우기
+            for(int i=1; i<=LCDcursor; i++) {
+                if(0 <= LCDcursor-i && 0 <= cursor-i) {
+                    lcd.setCursor(1,LCDcursor-i);
+                    lcd.print(node->child[cursor-i]->name);
+                }
+            }
     
-    if(rotary.pressed()) {
-        if(node->child[cursor]->command) {
-            order = node->child[cursor]->command;
-            cursor = 0;
-            LCDcursor = 0;
-        }
-        else {
-            node = node->child[cursor];
-            cursor = 0;
-            LCDcursor = 0;
+            if(rotary.pressed()) {
+                if(node->child[cursor]->command) {
+                    order = node->child[cursor]->command;
+                    cursor = 0;
+                    LCDcursor = 0;
+                    if(order = back) {order = 0; node = node->pri;}
+                    else             {node = root; menu = 0; break;}
+                }
+                else {
+                    node = node->child[cursor];
+                    cursor = 0;
+                    LCDcursor = 0;
+                }
+            }
+            delay(700);
         }
     }
     
     //선택한 메뉴의 기능실행
     switch(order) {
         default:
-        break;
-
-        case back:
-        order = 0;
-        node = node->pri;
         break;
 
         case menu_A1:
@@ -207,7 +207,6 @@ void loop() {
         lcd.print("func");
         lcd.print(order);
         order = 0;
-        node = root;
         delay(2000);
         break;
 
@@ -220,7 +219,6 @@ void loop() {
         lcd.print("func");
         lcd.print(order);
         order = 0;
-        node = root;
         delay(2000);
         break;
 
@@ -233,7 +231,6 @@ void loop() {
         lcd.print("func");
         lcd.print(order);
         order = 0;
-        node = root;
         delay(2000);
         break;
 
@@ -246,7 +243,6 @@ void loop() {
         lcd.print("func");
         lcd.print(order);
         order = 0;
-        node = root;
         delay(2000);
         break;
 
@@ -259,7 +255,6 @@ void loop() {
         lcd.print("func");
         lcd.print(order);
         order = 0;
-        node = root;
         delay(2000);
         break;
 
@@ -272,9 +267,7 @@ void loop() {
         lcd.print("func");
         lcd.print(order);
         order = 0;
-        node = root;
         delay(2000);
         break;
     }
-    delay(700);
 }
