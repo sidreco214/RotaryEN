@@ -3,7 +3,7 @@
 /*
 인터럽트 내에서 방향을 파악한 뒤, count++ or count--
 */
-volatile int8_t count = 0; //s1 핀의 RISING 카운트
+volatile long count = 0; //s1 핀의 RISING 카운트
 volatile unsigned long pri; //각속도 측정용 이전 시간 저장
 volatile unsigned long time; //걸린 시간
 
@@ -142,8 +142,8 @@ uint8_t RotaryEN::pressed() {
     else         return 0;
 }
 
-int8_t RotaryEN::step() {
-    int8_t temp = count;
+long RotaryEN::step() {
+    long temp = count;
     count = 0;
     return temp;
 }

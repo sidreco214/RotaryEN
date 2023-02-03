@@ -50,6 +50,10 @@ cursor =5 나머지 연산 %len
  LCD 커서는 constrain
 
  LCD커서로부터 위아래로 움직이면서 화면채우기
+
+ 값 복사 도중 인터럽트가 일어나면, 버그가 생길 수 있음
+ 그래서 인코더를 너무 빨리 돌리지 않도록 조심
+ 이 경우 천천히 조금 돌려주면 해결됨
 */
 #ifndef constrain
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
@@ -86,9 +90,9 @@ class Node {
     }
 };
 
+#define BACK 1
 enum Order {
-    back = 1,
-    menu_A1,
+    menu_A1 = 2,
     menu_A2,
 
     menu_B1,
@@ -106,9 +110,8 @@ void setup() {
     lcd.backlight();
 }
 
-void loop() { //main 안 while(1)
-    uint8_t menu = 1;
-    while(menu) {
+void loop() {
+    while(1) {
         RotaryEN rotary(4,20); //로터리 인코더가 메뉴 화면에서만 작동해야 함
 
         //UI 내용 할당
@@ -118,41 +121,49 @@ void loop() { //main 안 while(1)
         Node menuC("C",2,&root);
         Node menuD("D",2,&root);
         Node menuE("E",2,&root);
-        root->child =  new Node*[5]{&menuA, &menuB, &menuC, &menuD, &menuE};
+        root.child =  new Node*[5]{&menuA, &menuB, &menuC, &menuD, &menuE};
 
         Node menuA1("A1",0,&menuA,menu_A1);
         Node menuA2("A2",0,&menuA,menu_A2);
-        Node menuA3("Back",0,&menuA,back);
-        menuA->child = new Node*[3]{&menuA1, &menuA2, &menuA3};
+        Node menuA3("Back",0,&menuA,BACK);
+        menuA.child = new Node*[3]{&menuA1, &menuA2, &menuA3};
 
         Node menuB1("B1",0,&menuB,menu_B1);
-        Node menuB2("Back",0,&menuB,back);
-        menuB->child = new Node*[2]{&menuB1, &menuB2};
+        Node menuB2("Back",0,&menuB,BACK);
+        menuB.child = new Node*[2]{&menuB1, &menuB2};
 
         Node menuC1("C1",0,&menuC,menu_C1);
-        Node menuC2("Back",0,&menuC,back);
-        menuC->child = new Node*[2]{&menuC1, &menuC2}; //여기까지 수정, new를 걍 생성자로 바꾸기, 메모리 누수 방지
+        Node menuC2("Back",0,&menuC,BACK);
+        menuC.child = new Node*[2]{&menuC1, &menuC2};
+        
+        Node menuD1("D1",0,&menuD,menu_D1);
+        Node menuD2("Back",0,&menuD,BACK);
+        menuD.child = new Node*[2]{&menuD1, &menuD2};
 
-        Node* menuD1 = new Node("D1",0,menuD,menu_D1);
-        Node* menuD2 = new Node("Back",0,menuD,back);
-        menuD->child = new Node*[2]{menuD1, menuD2};
+        Node menuE1("E1",0,&menuD,menu_E1);
+        Node menuE2("Back",0,&menuD,BACK);
+        menuE.child = new Node*[2]{&menuE1, &menuE2};
 
-        Node* menuE1 = new Node("E1",0,menuD,menu_E1);
-        Node* menuE2 = new Node("Back",0,menuD,back);
-        menuE->child = new Node*[2]{menuE1, menuE2};
+        Node* node = &root;
+        uint16_t cursor = 0; //자료 선택커서
+        uint16_t LCDcursor = 0; //LCD 화면 커서
 
         while(1) {
-            static Node* node = root;
             uint8_t len = node->length;
-
-            static uint8_t cursor = 0; //자료 선택커서
-            static uint8_t LCDcursor = 0; //LCD 화면 커서
-            int8_t count = rotary.step();
-            cursor += count;
-            cursor %= len; 
+            long count = rotary.step();
+            if(count > 128) count = 127;
+            if(count < -128) count = -127;
+            
+            uint8_t num = min(LCD_ROW,len);
             LCDcursor += count;
-            LCDcursor = constrain(LCDcursor,0, min(LCD_ROW,len)-1);
-            if(!cursor) LCDcursor = 0; //자료 커서가 마지막 E에 있다가 다음으로 넘어가면 자료 커서는 0번을 가르키는데 LCD 커서는 여전히 3을 가르키니 초기화 필요
+            LCDcursor = constrain(LCDcursor,0, num-1);
+
+            cursor += count;
+            cursor %= len;
+            if(LCDcursor > cursor) LCDcursor = cursor;
+            //자료 커서가 마지막 E에 있다가 다음으로 넘어가면 자료 커서는 0번을 가르키는데 LCD 커서는 여전히 마지막 줄을 가르키니 초기화 필요
+            //그리고 로터리 엔코더를 빨리 돌리면, LCD 커서는 마지막 줄을 가르키는데, 자료 커서는 0,1,2(num 보다 작은 값)을 가르킬 수 있고, 이 경우 문제됨
+            //LCD 커서는 항상 자료 커서보다 작거나 같아야 함
 
             lcd.clear();
             //LCD 커서 표시
@@ -180,8 +191,8 @@ void loop() { //main 안 while(1)
                     order = node->child[cursor]->command;
                     cursor = 0;
                     LCDcursor = 0;
-                    if(order = back) {order = 0; node = node->pri;}
-                    else             {node = root; menu = 0; break;}
+                    if(order == BACK) {order = 0; node = node->pri;}
+                    else             {break;}
                 }
                 else {
                     node = node->child[cursor];
@@ -189,8 +200,9 @@ void loop() { //main 안 while(1)
                     LCDcursor = 0;
                 }
             }
-            delay(700);
+            else delay(500); //너무 빨리 clear와 쓰기가 반복되면 화면이 제대로 안보임 
         }
+        break;
     }
     
     //선택한 메뉴의 기능실행
