@@ -1,6 +1,8 @@
 /*
 Rotary Encoder
 로터리 인코더의 회전 방향과 스탭, 회전 각도, 각속도를 계산할 수 있음
+참고 https://elecs.tistory.com/181
+참고하기 전에 내가 설계했을 때는 인터럽트 INT0, INT1 두개 썻는데, 이상하게 작동할 때 있음
 */
 
 //Macro
