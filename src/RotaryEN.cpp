@@ -2,6 +2,8 @@
 
 /*
 인터럽트 내에서 방향을 파악한 뒤, count++ or count--
+s1 A상
+s2 B상
 */
 volatile long count = 0; //s1 핀의 RISING 카운트
 volatile unsigned long pri; //각속도 측정용 이전 시간 저장
@@ -9,32 +11,18 @@ volatile unsigned long time; //걸린 시간
 
 void INIT_INT0() {
   cbi(DDRB,PD2); //2번핀 입력으로
+  cbi(DDRB,PD3); //3번핀 입력으로
   sbi(EIMSK,INT0); //INT0 인터럽트 활성화
-  EICRA ^= 0x03; //RISING 에서 활성화
+  EICRA |= 0x03; //RISING 에서 활성화
   sei(); //set interupt, 인터럽트 전역적으로 활성화
 };
 
 ISR(INT0_vect) {
-    if(digitalRead(3)) {
-        count++;
-        time = millis() - pri;
-        pri = millis();
-    }
-};
-
-void INIT_INT1() {
-  cbi(DDRB,PD3); //3번핀 입력으로
-  sbi(EIMSK,INT1); //INT1 인터럽트 활성화
-  EICRA ^= 0x0c; //RISING 에서 활성화
-  sei(); //set interupt, 인터럽트 전역적으로 활성화
-};
-
-ISR(INT1_vect) {
-    if(digitalRead(2)) {
-        count--;
-        time = millis() - pri;
-        pri - millis();
-    }
+    int8_t state = digitalRead(3);
+    if(state) count--;
+    else      count++;
+    time = millis() - pri;
+    pri = millis();
 };
 
 volatile uint8_t buttonLV = 0;
@@ -104,14 +92,12 @@ ISR(PCINT2_vect) {
 RotaryEN::RotaryEN() {
     pri = millis();
     INIT_INT0();
-    INIT_INT1();
 }
 
 RotaryEN::RotaryEN(uint8_t button) {
     pri = millis();
     pin = button;
     INIT_INT0();
-    INIT_INT1();
     INIT_PCINT();
 }
 
@@ -119,15 +105,13 @@ RotaryEN::RotaryEN(uint8_t button, uint8_t step) {
     pri = millis();
     pin = button;
     INIT_INT0();
-    INIT_INT1();
     INIT_PCINT();
    
     _step = step;
 }
 
 RotaryEN::~RotaryEN() {
-    cbi(EIMSK,INT0);
-    cbi(EIMSK,INT1); //INT1 인터럽트 비활성화
+    cbi(EIMSK,INT0); //INT0 인터럽트 비활성화
     END_PCINT();
     count = 0;
     pri = 0;

@@ -54,6 +54,9 @@ cursor =5 나머지 연산 %len
  값 복사 도중 인터럽트가 일어나면, 버그가 생길 수 있음
  그래서 인코더를 너무 빨리 돌리지 않도록 조심
  이 경우 천천히 조금 돌려주면 해결됨
+
+ LCD커서가 젤 윗줄을 가르키고, A를 가르키는 상황에서 계속 인코더를 반시계 방향으로 돌리면
+ 커서가 E로 넘어가는 버그 있음
 */
 #ifndef constrain
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
@@ -84,7 +87,7 @@ class Node {
 
     ~Node() {
       if(child) {
-        delete[] child;
+        delete [] child;
         child = NULL;
       }
     }
