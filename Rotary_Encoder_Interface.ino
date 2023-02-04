@@ -63,7 +63,7 @@ enum Order {
 
     menu_D1,
 
-    menu_E1,s
+    menu_E1,
 } order;
 
 void setup() {
