@@ -2,62 +2,21 @@
 Rotary Encoder Interface with LCD
 begin 2023-02-01
 
-cursor = 0
->A 0123          0123 
- B
- C
- D
+다른 프로젝트의 일부분이 될 수 있는 로터리 인코더 인터페이스
+메뉴 항목이 많고, 자주 메뉴바가 뜨는 경우 이렇게 코딩하면 메모리 파편화 문제가 있을 수 있음
+이경우 클래스 배열로 선언하거나, 정적으로 선언하는 것을 고려
 
-cursor =1
- A                0123
->B 1230
- C
- D
+다만 클래스 배열인 경우, 크기가 크기때문에 램이 2KB밖에 되지않는 아두이노 우노에서는
+동적할당에 실패하여 버그가 발생할 수 있음
+그렇다고 정적으로 선언하자니, 메뉴바가 뜨는 시간은 전체 실행시간에서 얼마 되지 않는데,
+불필요하게 메모리만 차지함
 
-cursor =2
- A                0123
- B
->C 2301
- D
-
-cursor =3
- A                0123
- B
- C
->D 3012
-
-cursor =4
- B                1234
- C
- D
->E 4123
-
-cursor =5 나머지 연산 %len
-
->A 0123
- B
- C
- D
-
- cursor 4->3이면
- B                1234
- C
->D
- E
-
- 자료 커서와 LCD 커서를 만든 뒤
- 자료커서는 나머지 연산으로 순환
- LCD 커서는 constrain
-
- LCD커서로부터 위아래로 움직이면서 화면채우기
-
- 값 복사 도중 인터럽트가 일어나면, 버그가 생길 수 있음
- 그래서 인코더를 너무 빨리 돌리지 않도록 조심
- 이 경우 천천히 조금 돌려주면 해결됨
-
- LCD커서가 젤 윗줄을 가르키고, A를 가르키는 상황에서 계속 인코더를 반시계 방향으로 돌리면
- 커서가 E로 넘어가는 버그 있음
+문자열이 크기를 많이 차지하니, 문자열 부분이라도 따로 배열로 만들어 PROGMEM으로 선언해두고,
+노드에는 주소값을 저장한 뒤, 실행할 때 불러오면 어느정도 해결될 듯
 */
+
+//#define DEBUG
+
 #ifndef constrain
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 #endif
@@ -108,7 +67,9 @@ enum Order {
 } order;
 
 void setup() {
+    #ifdef DEBUG
     Serial.begin(9600);
+    #endif
     lcd.init();
     lcd.backlight();
 }
@@ -148,25 +109,33 @@ void loop() {
         menuE.child = new Node*[2]{&menuE1, &menuE2};
 
         Node* node = &root;
-        uint16_t cursor = 0; //자료 선택커서
-        uint16_t LCDcursor = 0; //LCD 화면 커서
+        int16_t cursor = 0; //자료 선택커서
+        int16_t LCDcursor = 0; //LCD 화면 커서
 
         while(1) {
             uint8_t len = node->length;
-            long count = rotary.step();
-            if(count > 128) count = 127;
-            if(count < -128) count = -127;
+            int16_t count = rotary.step();
             
             uint8_t num = min(LCD_ROW,len);
             LCDcursor += count;
             LCDcursor = constrain(LCDcursor,0, num-1);
 
             cursor += count;
-            cursor %= len;
+            if(cursor < 0) cursor = 0;
+            else           cursor %= len;
             if(LCDcursor > cursor) LCDcursor = cursor;
             //자료 커서가 마지막 E에 있다가 다음으로 넘어가면 자료 커서는 0번을 가르키는데 LCD 커서는 여전히 마지막 줄을 가르키니 초기화 필요
             //그리고 로터리 엔코더를 빨리 돌리면, LCD 커서는 마지막 줄을 가르키는데, 자료 커서는 0,1,2(num 보다 작은 값)을 가르킬 수 있고, 이 경우 문제됨
             //LCD 커서는 항상 자료 커서보다 작거나 같아야 함
+
+            #ifdef DEBUG
+            Serial.print(cursor);
+            Serial.print(", ");
+            Serial.print(LCDcursor);
+            Serial.print(", ");
+            Serial.print(count);
+            Serial.println("");
+            #endif
 
             lcd.clear();
             //LCD 커서 표시
@@ -214,73 +183,85 @@ void loop() {
         break;
 
         case menu_A1:
+        #ifdef DEBUG
         Serial.print("func");
-        Serial.println(order);
+        Serial.println(order-1);
+        #endif
 
         lcd.clear();
         lcd.setCursor(0,0);
         lcd.print("func");
-        lcd.print(order);
+        lcd.print(order-1);
         order = 0;
         delay(2000);
         break;
 
         case menu_A2:
+        #ifdef DEBUG
         Serial.print("func");
-        Serial.println(order);
-        
+        Serial.println(order-1);
+        #endif
+
         lcd.clear();
         lcd.setCursor(0,0);
         lcd.print("func");
-        lcd.print(order);
+        lcd.print(order-1);
         order = 0;
         delay(2000);
         break;
 
         case menu_B1:
+        #ifdef DEBUG
         Serial.print("func");
-        Serial.println(order);
-        
+        Serial.println(order-1);
+        #endif
+
         lcd.clear();
         lcd.setCursor(0,0);
         lcd.print("func");
-        lcd.print(order);
+        lcd.print(order-1);
         order = 0;
         delay(2000);
         break;
 
         case menu_C1:
+        #ifdef DEBUG
         Serial.print("func");
-        Serial.println(order);
-        
+        Serial.println(order-1);
+        #endif
+
         lcd.clear();
         lcd.setCursor(0,0);
         lcd.print("func");
-        lcd.print(order);
+        lcd.print(order-1);
         order = 0;
         delay(2000);
         break;
 
         case menu_D1:
+        #ifdef DEBUG
         Serial.print("func");
-        Serial.println(order);
-        
+        Serial.println(order-1);
+        #endif
+
         lcd.clear();
         lcd.setCursor(0,0);
         lcd.print("func");
-        lcd.print(order);
+        lcd.print(order-1);
         order = 0;
         delay(2000);
         break;
 
         case menu_E1:
+        #ifdef DEBUG
         Serial.print("func");
-        Serial.println(order);
-        
+        Serial.println(order-1);
+        #endif
+
         lcd.clear();
         lcd.setCursor(0,0);
         lcd.print("func");
-        lcd.print(order);
+        lcd.print(order-1);
         order = 0;
         delay(2000);
         break;

@@ -1,0 +1,6 @@
+{
+    "sketch": "Rotary_Encoder_Interface.ino",
+    "board": "arduino:avr:uno",
+    "port": "COM3",
+    "output": "./build"
+}

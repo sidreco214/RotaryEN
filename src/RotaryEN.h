@@ -38,7 +38,7 @@ class RotaryEN {
     ~RotaryEN();
 
     uint8_t pressed(); //버튼이 눌러졌으면 1
-    long step(); //로터리 인코더 회전 스탭 반환
+    int16_t step(); //로터리 인코더 회전 스탭 반환
     inline float rottation(uint8_t step); //로터리 인코더 회전 각도 변환(단위: 도)
     inline float velocity(uint8_t step);
 

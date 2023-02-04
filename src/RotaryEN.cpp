@@ -5,7 +5,7 @@
 s1 A상
 s2 B상
 */
-volatile long count = 0; //s1 핀의 RISING 카운트
+volatile int16_t count = 0; //s1 핀의 RISING 카운트
 volatile unsigned long pri; //각속도 측정용 이전 시간 저장
 volatile unsigned long time; //걸린 시간
 
@@ -126,8 +126,8 @@ uint8_t RotaryEN::pressed() {
     else         return 0;
 }
 
-long RotaryEN::step() {
-    long temp = count;
+int16_t RotaryEN::step() {
+    int16_t temp = count;
     count = 0;
     return temp;
 }
