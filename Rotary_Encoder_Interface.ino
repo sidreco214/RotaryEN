@@ -142,7 +142,7 @@ void loop() {
             lcd.setCursor(0,LCDcursor);
             lcd.print(">");
     
-            //아래로 진행해서 화면 채우기
+            //위로 진행해서 화면 채우기
             for(int i=0; i<LCD_ROW-LCDcursor; i++) {
                 if(LCDcursor+i < LCD_ROW && cursor+i < len) {
                     lcd.setCursor(1,LCDcursor+i);
@@ -150,7 +150,7 @@ void loop() {
                 }
             }
 
-            //위로 진행해서 화면 채우기
+            //아래로 진행해서 화면 채우기
             for(int i=1; i<=LCDcursor; i++) {
                 if(0 <= LCDcursor-i && 0 <= cursor-i) {
                     lcd.setCursor(1,LCDcursor-i);
